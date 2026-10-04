@@ -1,7 +1,5 @@
-#include <Arduino.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
 
 // === КОНФИГУРАЦИЯ ЗАДАЧ ===
 #define TASK_SERIAL_PRIORITY    1   // Низкий приоритет — не критично
@@ -14,21 +12,21 @@ volatile bool led_state = false;
 
 // === ЗАДАЧА 1: Отправка в Serial (низкий приоритет) ===
 void task_serial(void *pvParameters) {
-    for (;;) {
-        Serial.println("RTOS: Task Serial — LED ON");
+    while (1) {
+        puts("RTOS: Task Serial — LED ON");
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 // === ЗАДАЧА 2: Управление LED (средний приоритет) ===
 void task_led(void *pvParameters) {
-    for (;;) {
+    while (1) {
         led_state = !led_state;  // Инвертируем состояние
 
         if (led_state) {
-            Serial.println("RTOS: Task LED — ON");
+            puts("RTOS: Task LED — ON");
         } else {
-            Serial.println("RTOS: Task LED — OFF");
+            puts("RTOS: Task LED — OFF");
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -37,9 +35,9 @@ void task_led(void *pvParameters) {
 
 // === ЗАДАЧА 3: Мониторинг (высокий приоритет) ===
 void task_monitor(void *pvParameters) {
-    for (;;) {
-        Serial.print("RTOS: Task Monitor — LED State: ");
-        Serial.println(led_state ? "ON" : "OFF");
+    while (1) {
+        puts("RTOS: Task Monitor — LED State: ");
+        puts(led_state ? "ON" : "OFF");
 
         // Здесь можно добавить логику:
         // - проверка состояния датчиков
@@ -52,7 +50,7 @@ void task_monitor(void *pvParameters) {
 
 // === ЗАДАЧА 4: Обработка прерываний (высший приоритет) ===
 void task_interrupt_handler(void *pvParameters) {
-    for (;;) {
+    while (1) {
         // Здесь обрабатываются внешние прерывания (GPIO, таймеры и т.д.)
         // Например: кнопка сброса, датчик движения, приём данных
 
@@ -102,23 +100,10 @@ void app_tasks_init(void) {
         NULL
     );
 
-    Serial.println("RTOS: All tasks created successfully!");
+    puts("RTOS: All tasks created successfully!");
 }
 
-void setup() {
-    Serial.begin(115200);
-    delay(100);  // Небольшая задержка для стабильности Serial
-
-    Serial.println("=== ESP32 RTOS System Started ===");
+extern "C" void app_main(void) {
+    // Инициализация задач
     app_tasks_init();
-
-    // Задержка для инициализации задач перед выводом логов
-    delay(500);
-
-    Serial.println("=== Tasks Running ===");
-}
-
-void loop() {
-    // В RTOS-подходе main loop — это точка входа.
-    // Основная логика перенесена в задачи (tasks).
 }
